@@ -98,6 +98,23 @@ supabase secrets set PUBLISH_SECRET=<secret>
 
 Sie gehören weder in `.env.local` noch in eine andere Frontend-Datei.
 
+Für ein gehostetes Supabase-Projekt steht eine getrennte, serverseitige Vorlage
+bereit. Die lokale Zieldatei wird von Git ignoriert und ausschließlich zum
+Upload in den Supabase-Secret-Store verwendet:
+
+```bash
+cp supabase/.env.example supabase/.env.remote.local
+# Werte in supabase/.env.remote.local eintragen
+supabase secrets set --project-ref <project-ref> \
+  --env-file supabase/.env.remote.local
+```
+
+Ein lokaler Supabase-Stack ist dafür nicht erforderlich; die CLI überträgt die
+Werte in das verknüpfte gehostete Projekt. Echte Werte werden nur in dieser
+ignorierten Datei oder als Supabase-Secrets gespeichert. Die Root-Dateien
+`.env` und `.env.local` bleiben ausschließlich der öffentlichen
+Frontend-Konfiguration vorbehalten.
+
 ## Admin-Konto anlegen
 
 Es gibt kein Registrierungsformular. Das einzige Konto wird im Supabase
