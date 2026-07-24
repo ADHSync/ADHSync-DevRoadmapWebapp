@@ -1,37 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import { slugify, uniqueSlug } from "./content";
+import { nextRoadmapId } from "./content";
 
-describe("slugify", () => {
-  it("normalisiert deutsche Titel", () => {
-    expect(slugify("  Verschlüsselter Anhang-Sync  ")).toBe(
-      "verschluesselter-anhang-sync",
-    );
-  });
-});
+describe("nextRoadmapId", () => {
+  const date = new Date(2026, 6, 24, 12);
 
-describe("uniqueSlug", () => {
-  it("verwendet den normalisierten Titel, wenn er noch frei ist", () => {
-    expect(uniqueSlug("Fokus-Timer", [])).toBe("fokus-timer");
+  it("beginnt für ein Datum mit der laufenden Nummer 1", () => {
+    expect(nextRoadmapId([], date)).toBe("260724-1");
   });
 
-  it("ergänzt bei Kollisionen eine fortlaufende Nummer", () => {
-    expect(uniqueSlug("Fokus-Timer", ["fokus-timer", "fokus-timer-2"])).toBe(
-      "fokus-timer-3",
-    );
+  it("setzt die höchste Nummer desselben Datums fort", () => {
+    expect(
+      nextRoadmapId(["260724-1", "260724-3", "fokus-timer", "260723-99"], date),
+    ).toBe("260724-4");
   });
 
-  it("liefert auch für nicht slug-fähige Titel eine stabile Basis", () => {
-    expect(uniqueSlug("✨", [])).toBe("roadmap-eintrag");
-  });
-
-  it("hält inklusive Kollisionssuffix das Datenbanklimit ein", () => {
-    const title = "Ein sehr langer Titel ".repeat(20);
-    const base = uniqueSlug(title, []);
-    const duplicate = uniqueSlug(title, [base]);
-
-    expect(base.length).toBeLessThanOrEqual(100);
-    expect(duplicate.length).toBeLessThanOrEqual(100);
-    expect(duplicate.endsWith("-2")).toBe(true);
+  it("ignoriert ungültige Nummern desselben Datums", () => {
+    expect(
+      nextRoadmapId(["260724-0", "260724-test", "260724-2-extra"], date),
+    ).toBe("260724-1");
   });
 });

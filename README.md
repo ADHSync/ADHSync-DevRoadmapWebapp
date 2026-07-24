@@ -159,9 +159,9 @@ supabase/
 ## Stabile Roadmap-IDs
 
 Beim Anlegen eines Roadmap-Eintrags erzeugt die Admin-App den `slug`
-automatisch aus dem deutschen Titel. Bereits belegte Werte erhalten ein
-fortlaufendes Suffix wie `-2` oder `-3`. Der Slug wird anschließend auch bei
-Titeländerungen nicht mehr verändert.
+automatisch aus dem lokalen Datum und einer fortlaufenden Tagesnummer, zum
+Beispiel `260724-1`, `260724-2` und `260724-3`. Der Slug wird anschließend nicht
+mehr verändert.
 
 Diese stabile ID wird im veröffentlichten JSON als `id` verwendet und verbindet
 Changelog-Einträge mit Roadmap-Einträgen. Dadurch kann die iOS-App denselben

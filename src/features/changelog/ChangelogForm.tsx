@@ -73,9 +73,6 @@ interface ChangelogFormProps {
   onClose: () => void;
 }
 
-const inputClassName =
-  "mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none placeholder:text-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20 dark:disabled:bg-slate-900/60";
-
 function FieldError({ message }: { message?: string }) {
   return message ? (
     <p className="mt-1 text-xs text-red-700 dark:text-red-300">{message}</p>
@@ -355,7 +352,7 @@ export function ChangelogForm({
                   {...register("app_version")}
                   id="changelog-version"
                   placeholder="2.1.0"
-                  className={inputClassName}
+                  className="form-control"
                 />
                 <FieldError message={errors.app_version?.message} />
               </div>
@@ -370,7 +367,7 @@ export function ChangelogForm({
                   {...register("released_on")}
                   id="changelog-released-on"
                   type="date"
-                  className={inputClassName}
+                  className="form-control"
                 />
                 <FieldError message={errors.released_on?.message} />
               </div>
@@ -381,7 +378,7 @@ export function ChangelogForm({
                 <select
                   {...register("change_kind")}
                   id="changelog-kind"
-                  className={inputClassName}
+                  className="form-control"
                 >
                   {CHANGE_KINDS.map((value) => (
                     <option key={value} value={value}>
@@ -400,7 +397,7 @@ export function ChangelogForm({
                 <select
                   {...register("visibility")}
                   id="changelog-visibility"
-                  className={inputClassName}
+                  className="form-control"
                 >
                   {CONTENT_VISIBILITIES.map((value) => (
                     <option key={value} value={value}>
@@ -482,7 +479,7 @@ export function ChangelogForm({
                     <input
                       {...register("title_de")}
                       id="changelog-title-de"
-                      className={inputClassName}
+                      className="form-control"
                     />
                     <FieldError message={errors.title_de?.message} />
                   </div>
@@ -497,7 +494,7 @@ export function ChangelogForm({
                       {...register("body_de")}
                       id="changelog-body-de"
                       rows={7}
-                      className={inputClassName}
+                      className="form-control"
                     />
                     <FieldError message={errors.body_de?.message} />
                   </div>
@@ -546,7 +543,7 @@ export function ChangelogForm({
                     <input
                       {...register("title_en")}
                       id="changelog-title-en"
-                      className={inputClassName}
+                      className="form-control"
                     />
                   </div>
                   <div>
@@ -560,7 +557,7 @@ export function ChangelogForm({
                       {...register("body_en")}
                       id="changelog-body-en"
                       rows={7}
-                      className={inputClassName}
+                      className="form-control"
                     />
                   </div>
 
@@ -576,7 +573,7 @@ export function ChangelogForm({
                       onChange={(event) =>
                         void setTranslationReviewed(event.target.checked)
                       }
-                      className="mt-0.5 size-4 rounded border-slate-400 text-cyan-700 focus:ring-cyan-600 disabled:opacity-50 dark:bg-slate-950"
+                      className="checkbox-control"
                     />
                     <span>
                       <span className="block font-medium">
@@ -603,7 +600,7 @@ export function ChangelogForm({
                 <select
                   {...register("roadmap_item_id")}
                   id="changelog-roadmap"
-                  className={inputClassName}
+                  className="form-control"
                 >
                   <option value="">Keine Verknüpfung</option>
                   {roadmapItems
@@ -628,7 +625,7 @@ export function ChangelogForm({
                   id="changelog-sort-order"
                   type="number"
                   step="10"
-                  className={inputClassName}
+                  className="form-control"
                 />
                 <FieldError message={errors.sort_order?.message} />
               </div>
@@ -639,7 +636,7 @@ export function ChangelogForm({
                 <input
                   {...register("mark_roadmap_done")}
                   type="checkbox"
-                  className="mt-0.5 size-4 rounded border-cyan-400 text-cyan-700 focus:ring-cyan-600 dark:bg-slate-900"
+                  className="checkbox-control"
                 />
                 <span>
                   <span className="block font-medium">
@@ -647,7 +644,7 @@ export function ChangelogForm({
                   </span>
                   <span className="mt-0.5 block text-xs leading-5 text-cyan-800 dark:text-cyan-200">
                     Setzt den Status von „{linkedRoadmap.title_de}“ auf
-                    „Erledigt“ und ergänzt bei Bedarf das heutige Datum.
+                    „Erledigt“. Das Feld „Erledigt am“ bleibt unverändert.
                   </span>
                 </span>
               </label>

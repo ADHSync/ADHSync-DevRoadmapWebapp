@@ -57,9 +57,6 @@ interface SortableRoadmapRowProps {
   onEdit: (item: RoadmapItem) => void;
 }
 
-const selectClassName =
-  "h-9 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400";
-
 function statusClassName(status: ContentStatus): string {
   const classes: Record<ContentStatus, string> = {
     planned:
@@ -373,7 +370,7 @@ export function RoadmapPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Titel oder Kurztext durchsuchen …"
-              className="h-9 w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 dark:border-slate-700 dark:bg-slate-900 dark:focus:border-cyan-400"
+              className="filter-search-control"
             />
           </label>
           <label>
@@ -383,7 +380,7 @@ export function RoadmapPage() {
               onChange={(event) =>
                 setStatusFilter(event.target.value as ContentStatus | "")
               }
-              className={selectClassName}
+              className="filter-control"
             >
               <option value="">Alle Status</option>
               {CONTENT_STATUSES.map((value) => (
@@ -400,7 +397,7 @@ export function RoadmapPage() {
               onChange={(event) =>
                 setHorizonFilter(event.target.value as ContentHorizon | "")
               }
-              className={selectClassName}
+              className="filter-control"
             >
               <option value="">Alle Horizonte</option>
               {CONTENT_HORIZONS.map((value) => (
@@ -419,7 +416,7 @@ export function RoadmapPage() {
                   event.target.value as ContentVisibility | "",
                 )
               }
-              className={selectClassName}
+              className="filter-control"
             >
               <option value="">Alle Sichtbarkeiten</option>
               {CONTENT_VISIBILITIES.map((value) => (

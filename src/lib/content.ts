@@ -83,45 +83,33 @@ export const changeKindLabels: Record<ChangeKind, string> = {
   removed: "Entfernt",
 };
 
-const umlautMap: Record<string, string> = {
-  ä: "ae",
-  ö: "oe",
-  ü: "ue",
-  ß: "ss",
-};
-
-export function slugify(value: string): string {
-  return value
-    .trim()
-    .toLocaleLowerCase("de")
-    .replace(/[äöüß]/g, (character) => umlautMap[character] ?? character)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
-
-export function uniqueSlug(
-  value: string,
+export function nextRoadmapId(
   existingSlugs: Iterable<string>,
+  date = new Date(),
 ): string {
-  const usedSlugs = new Set(existingSlugs);
-  const normalizedBase =
-    slugify(value).slice(0, 100).replace(/-+$/g, "") || "roadmap-eintrag";
-  let candidate = normalizedBase;
-  let suffixNumber = 2;
+  const datePrefix = [
+    date.getFullYear().toString().slice(-2),
+    (date.getMonth() + 1).toString().padStart(2, "0"),
+    date.getDate().toString().padStart(2, "0"),
+  ].join("");
+  const prefix = `${datePrefix}-`;
+  let highestSequence = 0;
 
-  while (usedSlugs.has(candidate)) {
-    const suffix = `-${suffixNumber}`;
-    const shortenedBase = normalizedBase
-      .slice(0, 100 - suffix.length)
-      .replace(/-+$/g, "");
-    candidate = `${shortenedBase}${suffix}`;
-    suffixNumber += 1;
+  for (const slug of existingSlugs) {
+    if (!slug.startsWith(prefix)) {
+      continue;
+    }
+
+    const sequenceText = slug.slice(prefix.length);
+
+    if (!/^[1-9]\d*$/.test(sequenceText)) {
+      continue;
+    }
+
+    highestSequence = Math.max(highestSequence, Number(sequenceText));
   }
 
-  return candidate;
+  return `${prefix}${highestSequence + 1}`;
 }
 
 export function todayAsDateInput(): string {
