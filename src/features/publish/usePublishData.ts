@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { databaseErrorMessage } from "../../lib/database-error";
 import { supabase } from "../../lib/supabase";
 import { isTranslationStale } from "../../lib/translation";
 import type { Publication } from "../../types/database";
@@ -158,7 +159,7 @@ export function usePublishData() {
       latestChangelogAttemptResult.error;
 
     if (error) {
-      setLoadError(error.message);
+      setLoadError(databaseErrorMessage(error));
       setIsLoading(false);
       return;
     }

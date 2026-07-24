@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { databaseErrorMessage } from "../../lib/database-error";
 import { supabase } from "../../lib/supabase";
 import type {
   ContentHorizon,
@@ -57,7 +58,7 @@ export function useRoadmapItems() {
       .order("updated_at", { ascending: false });
 
     if (error) {
-      setLoadError(error.message);
+      setLoadError(databaseErrorMessage(error));
       setIsLoading(false);
       return;
     }
