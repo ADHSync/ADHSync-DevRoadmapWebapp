@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Lint ausführen
+        run: npm run lint
+
+      - name: Unit-Tests ausführen
+        run: npm test
+
+      - name: Produktions-Build erzeugen
+        run: npm run build
+
+      - name: Frontend auf Secrets prüfen
+        run: npm run audit:frontend-secrets
