@@ -5,8 +5,8 @@ Changelog-Inhalte von ADHSync.
 
 ## Voraussetzungen
 
-- Node.js 22
-- npm
+- Node.js 26.4.0
+- npm 11.17.0
 - Supabase CLI
 - Ein Supabase-Projekt mit dem in `AGENTS.md` beschriebenen Schema
 
@@ -15,6 +15,7 @@ Changelog-Inhalte von ADHSync.
 1. Repository klonen und Abhängigkeiten aus der Lockdatei installieren:
 
    ```bash
+   nvm use
    npm ci
    ```
 
@@ -27,9 +28,13 @@ Changelog-Inhalte von ADHSync.
 3. Das Supabase-Projekt verknüpfen und die Migrationen anwenden:
 
    ```bash
+   supabase init
    supabase link --project-ref <project-ref>
    supabase db push
    ```
+
+   `supabase init` ist nur nötig, solange noch keine
+   `supabase/config.toml` vorhanden ist.
 
 4. Den Admin-Benutzer wie unten beschrieben anlegen.
 
@@ -39,20 +44,38 @@ Changelog-Inhalte von ADHSync.
    npm run dev
    ```
 
+### Fehlendes Datenbankschema
+
+Wenn die benötigten Tabellen fehlen, erkennt die Admin-App die entsprechenden
+Postgres-/PostgREST-Fehler und zeigt den erforderlichen Migrationsbefehl an:
+
+```bash
+supabase db push
+```
+
+Das Schema wird bewusst nicht aus dem Browser installiert. Dafür wären
+privilegierte Datenbank- oder Management-Zugangsdaten nötig, die gemäß der
+Sicherheitsarchitektur niemals im Frontend liegen dürfen. Die versionierten
+Migrationen unter `supabase/migrations/` sind die verbindliche und
+reproduzierbare Installationsquelle.
+
 ## Umgebungsvariablen
 
 ### Frontend
 
 Die Root-Datei `.env.local` enthält ausschließlich diese öffentlichen Werte:
 
-| Variable                 | Bedeutung                                |
-| ------------------------ | ---------------------------------------- |
-| `VITE_SUPABASE_URL`      | URL des Supabase-Projekts                |
-| `VITE_SUPABASE_ANON_KEY` | Öffentlicher anon-/publishable-Schlüssel |
+| Variable                 | Bedeutung                          |
+| ------------------------ | ---------------------------------- |
+| `VITE_SUPABASE_URL`      | URL des Supabase-Projekts          |
+| `VITE_SUPABASE_ANON_KEY` | Öffentlicher anon-/Publishable-Key |
 
 Alle `VITE_`-Variablen werden von Vite in das Browser-Bundle eingebaut. Deshalb
 dürfen dort keine Server-Secrets stehen. Die Vorlage befindet sich in
-`.env.example`.
+`.env.example`. Der Wert für `VITE_SUPABASE_ANON_KEY` muss ein öffentlicher
+`sb_publishable_…`-Key oder ein Legacy-`anon`-JWT sein. Ein `sb_secret_…`-Key
+oder ein JWT mit der Rolle `service_role` wird bereits beim Start und Build
+abgewiesen.
 
 ### Supabase Edge Functions
 
@@ -74,6 +97,23 @@ supabase secrets set PUBLISH_SECRET=<secret>
 ```
 
 Sie gehören weder in `.env.local` noch in eine andere Frontend-Datei.
+
+Für ein gehostetes Supabase-Projekt steht eine getrennte, serverseitige Vorlage
+bereit. Die lokale Zieldatei wird von Git ignoriert und ausschließlich zum
+Upload in den Supabase-Secret-Store verwendet:
+
+```bash
+cp supabase/.env.example supabase/.env.remote.local
+# Werte in supabase/.env.remote.local eintragen
+supabase secrets set --project-ref <project-ref> \
+  --env-file supabase/.env.remote.local
+```
+
+Ein lokaler Supabase-Stack ist dafür nicht erforderlich; die CLI überträgt die
+Werte in das verknüpfte gehostete Projekt. Echte Werte werden nur in dieser
+ignorierten Datei oder als Supabase-Secrets gespeichert. Die Root-Dateien
+`.env` und `.env.local` bleiben ausschließlich der öffentlichen
+Frontend-Konfiguration vorbehalten.
 
 ## Admin-Konto anlegen
 
@@ -115,6 +155,18 @@ supabase/
   migrations/         Datenbankmigrationen
   functions/          Supabase Edge Functions
 ```
+
+## Stabile Roadmap-IDs
+
+Beim Anlegen eines Roadmap-Eintrags erzeugt die Admin-App den `slug`
+automatisch aus dem lokalen Datum und einer fortlaufenden Tagesnummer, zum
+Beispiel `260724-1`, `260724-2` und `260724-3`. Der Slug wird anschließend nicht
+mehr verändert.
+
+Diese stabile ID wird im veröffentlichten JSON als `id` verwendet und verbindet
+Changelog-Einträge mit Roadmap-Einträgen. Dadurch kann die iOS-App denselben
+Inhalt über mehrere Veröffentlichungen hinweg wiedererkennen, ohne eine interne
+Datenbank-UUID auszugeben.
 
 ## Sicherheit
 
@@ -173,4 +225,5 @@ werden durch Unit-Tests gegen unbeabsichtigte Ausgabe abgesichert.
 
 Bei jedem Push auf `main` führt GitHub Actions `npm ci`, Lint, Unit-Tests,
 Produktions-Build und den Frontend-Secret-Audit aus. Die Workflow-Datei enthält
-bewusst kein Deployment.
+bewusst kein Deployment. Die verwendete Node-Version wird zentral über
+`.nvmrc` festgelegt.

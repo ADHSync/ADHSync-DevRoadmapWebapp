@@ -7,7 +7,7 @@ import {
   LockKeyhole,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useBlocker } from "react-router-dom";
 import { toast } from "sonner";
@@ -23,10 +23,9 @@ import {
   TRANSLATION_STATES,
   errorMessage,
   horizonLabels,
+  nextRoadmapId,
   priorityLabels,
-  slugify,
   statusLabels,
-  todayAsDateInput,
   visibilityLabels,
 } from "../../lib/content";
 import { sha256 } from "../../lib/hash";
@@ -40,15 +39,6 @@ import type {
 } from "../../types/database";
 
 const roadmapFormSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .min(1, "Slug ist erforderlich.")
-    .max(100, "Slug darf höchstens 100 Zeichen enthalten.")
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Nur Kleinbuchstaben, Zahlen und einzelne Bindestriche verwenden.",
-    ),
   title_de: z
     .string()
     .trim()
@@ -88,9 +78,6 @@ interface RoadmapFormProps {
   onClose: () => void;
 }
 
-const inputClassName =
-  "mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none placeholder:text-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20 dark:disabled:bg-slate-900/60";
-
 function FieldError({ message }: { message?: string }) {
   if (!message) {
     return null;
@@ -103,7 +90,6 @@ function FieldError({ message }: { message?: string }) {
 
 function defaultValues(item: RoadmapItem | null): RoadmapFormValues {
   return {
-    slug: item?.slug ?? "",
     title_de: item?.title_de ?? "",
     summary_de: item?.summary_de ?? "",
     title_en: item?.title_en ?? "",
@@ -131,23 +117,18 @@ export function RoadmapForm({
   const [languageTab, setLanguageTab] = useState<"de" | "en">("de");
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [slugWarningOpen, setSlugWarningOpen] = useState(false);
-  const [slugUnlocked, setSlugUnlocked] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [sourceChanged, setSourceChanged] = useState(false);
   const [sourceHashReference, setSourceHashReference] = useState(
     item?.source_hash ?? null,
   );
-  const slugEditedRef = useRef(Boolean(item));
-  const previousStatusRef = useRef(item?.status ?? "planned");
   const initialValues = useMemo(() => defaultValues(item), [item]);
 
   const {
     register,
     control,
     handleSubmit,
-    setError,
     setValue,
     reset,
     formState: { dirtyFields, errors, isDirty, isSubmitting },
@@ -164,26 +145,9 @@ export function RoadmapForm({
     control,
     name: "translation_status",
   });
-  const status = useWatch({ control, name: "status" });
-  const completedAt = useWatch({ control, name: "completed_at" });
   const blocker = useBlocker(isDirty);
 
   useBeforeUnloadWarning(isDirty);
-
-  useEffect(() => {
-    if (
-      status === "done" &&
-      previousStatusRef.current !== "done" &&
-      !completedAt
-    ) {
-      setValue("completed_at", todayAsDateInput(), {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-
-    previousStatusRef.current = status;
-  }, [completedAt, setValue, status]);
 
   useEffect(() => {
     let active = true;
@@ -211,9 +175,6 @@ export function RoadmapForm({
   const translationMissing = !titleEn.trim() || !summaryEn.trim();
   const translationNeedsAttention =
     translationMissing || sourceChanged || translationStatus === "missing";
-
-  const titleDeField = register("title_de");
-  const slugField = register("slug");
 
   function requestClose() {
     if (isDirty) {
@@ -292,17 +253,9 @@ export function RoadmapForm({
   }
 
   async function submit(values: RoadmapFormValues) {
-    const duplicateSlug = items.some(
-      (candidate) =>
-        candidate.slug === values.slug && candidate.id !== item?.id,
-    );
-
-    if (duplicateSlug) {
-      setError("slug", { message: "Dieser Slug ist bereits vergeben." });
-      return;
-    }
-
     try {
+      const slug =
+        item?.slug ?? nextRoadmapId(items.map((candidate) => candidate.slug));
       const sourceHash = await sha256(`${values.title_de}${values.summary_de}`);
       const englishComplete = Boolean(values.title_en && values.summary_en);
       const englishChanged = Boolean(
@@ -319,7 +272,7 @@ export function RoadmapForm({
       }
 
       await onSave({
-        slug: values.slug,
+        slug,
         title_de: values.title_de,
         summary_de: values.summary_de,
         title_en: values.title_en || null,
@@ -349,10 +302,6 @@ export function RoadmapForm({
       onClose();
     } catch (error) {
       const message = errorMessage(error);
-
-      if (message.toLowerCase().includes("duplicate")) {
-        setError("slug", { message: "Dieser Slug ist bereits vergeben." });
-      }
 
       toast.error("Roadmap-Eintrag konnte nicht gespeichert werden.", {
         description: message,
@@ -390,7 +339,7 @@ export function RoadmapForm({
         description={
           item
             ? `Stabile ID: ${item.slug}`
-            : "Neuer Inhalt beginnt standardmäßig als interner Entwurf."
+            : "Die stabile ID wird beim Speichern automatisch aus Datum und Tagesnummer erzeugt."
         }
         onClose={requestClose}
       >
@@ -399,40 +348,6 @@ export function RoadmapForm({
           className="flex min-h-full flex-col"
         >
           <div className="flex-1 space-y-6 p-5">
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <label htmlFor="roadmap-slug" className="text-sm font-medium">
-                  Slug <span className="text-red-600">*</span>
-                </label>
-                {item && !slugUnlocked && (
-                  <button
-                    type="button"
-                    onClick={() => setSlugWarningOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 dark:text-amber-300 dark:hover:bg-amber-950"
-                  >
-                    <LockKeyhole aria-hidden="true" className="size-3.5" />
-                    Slug ändern
-                  </button>
-                )}
-              </div>
-              <input
-                {...slugField}
-                id="roadmap-slug"
-                readOnly={Boolean(item && !slugUnlocked)}
-                onChange={(event) => {
-                  slugEditedRef.current = true;
-                  slugField.onChange(event);
-                }}
-                aria-invalid={Boolean(errors.slug)}
-                className={inputClassName}
-              />
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Stabile, in der App verwendete ID. Nur Kleinbuchstaben und
-                Bindestriche.
-              </p>
-              <FieldError message={errors.slug?.message} />
-            </div>
-
             <div>
               <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
                 <button
@@ -507,21 +422,11 @@ export function RoadmapForm({
                       </span>
                     </div>
                     <input
-                      {...titleDeField}
+                      {...register("title_de")}
                       id="roadmap-title-de"
                       maxLength={80}
-                      onChange={(event) => {
-                        titleDeField.onChange(event);
-
-                        if (!item && !slugEditedRef.current) {
-                          setValue("slug", slugify(event.target.value), {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          });
-                        }
-                      }}
                       aria-invalid={Boolean(errors.title_de)}
-                      className={inputClassName}
+                      className="form-control"
                     />
                     <FieldError message={errors.title_de?.message} />
                   </div>
@@ -545,7 +450,7 @@ export function RoadmapForm({
                       rows={5}
                       maxLength={300}
                       aria-invalid={Boolean(errors.summary_de)}
-                      className={inputClassName}
+                      className="form-control"
                     />
                     <FieldError message={errors.summary_de?.message} />
                   </div>
@@ -600,7 +505,7 @@ export function RoadmapForm({
                       {...register("title_en")}
                       id="roadmap-title-en"
                       maxLength={80}
-                      className={inputClassName}
+                      className="form-control"
                     />
                     <FieldError message={errors.title_en?.message} />
                   </div>
@@ -622,7 +527,7 @@ export function RoadmapForm({
                       id="roadmap-summary-en"
                       rows={5}
                       maxLength={300}
-                      className={inputClassName}
+                      className="form-control"
                     />
                     <FieldError message={errors.summary_en?.message} />
                   </div>
@@ -639,7 +544,7 @@ export function RoadmapForm({
                       onChange={(event) =>
                         void setTranslationReviewed(event.target.checked)
                       }
-                      className="mt-0.5 size-4 rounded border-slate-400 text-cyan-700 focus:ring-cyan-600 disabled:opacity-50 dark:bg-slate-950"
+                      className="checkbox-control"
                     />
                     <span>
                       <span className="block font-medium">
@@ -663,7 +568,7 @@ export function RoadmapForm({
                 <select
                   {...register("status")}
                   id="roadmap-status"
-                  className={inputClassName}
+                  className="form-control"
                 >
                   {CONTENT_STATUSES.map((value) => (
                     <option key={value} value={value}>
@@ -682,7 +587,7 @@ export function RoadmapForm({
                 <select
                   {...register("visibility")}
                   id="roadmap-visibility"
-                  className={inputClassName}
+                  className="form-control"
                 >
                   {CONTENT_VISIBILITIES.map((value) => (
                     <option key={value} value={value}>
@@ -701,7 +606,7 @@ export function RoadmapForm({
                 <select
                   {...register("horizon")}
                   id="roadmap-horizon"
-                  className={inputClassName}
+                  className="form-control"
                 >
                   {CONTENT_HORIZONS.map((value) => (
                     <option key={value} value={value}>
@@ -720,7 +625,7 @@ export function RoadmapForm({
                 <select
                   {...register("priority")}
                   id="roadmap-priority"
-                  className={inputClassName}
+                  className="form-control"
                 >
                   {CONTENT_PRIORITIES.map((value) => (
                     <option key={value} value={value}>
@@ -739,7 +644,7 @@ export function RoadmapForm({
                 <input
                   {...register("category")}
                   id="roadmap-category"
-                  className={inputClassName}
+                  className="form-control"
                 />
                 <FieldError message={errors.category?.message} />
               </div>
@@ -754,7 +659,7 @@ export function RoadmapForm({
                   {...register("completed_at")}
                   id="roadmap-completed-at"
                   type="date"
-                  className={inputClassName}
+                  className="form-control"
                 />
                 <FieldError message={errors.completed_at?.message} />
               </div>
@@ -774,7 +679,7 @@ export function RoadmapForm({
                 id="roadmap-dev-notes"
                 aria-label="Interne Entwicklungsnotizen"
                 rows={5}
-                className={`${inputClassName} border-amber-300 dark:border-amber-800`}
+                className="form-control form-control-warning"
               />
             </div>
           </div>
@@ -837,18 +742,6 @@ export function RoadmapForm({
         isPending={isDeleting}
         onConfirm={() => void confirmDelete()}
         onCancel={() => setDeleteDialogOpen(false)}
-      />
-
-      <ConfirmDialog
-        open={slugWarningOpen}
-        title="Stabile ID wirklich ändern?"
-        description="Die App verwendet den Slug, um diesen Eintrag über Veröffentlichungen hinweg wiederzuerkennen. Eine Änderung kann bestehende Zuordnungen unterbrechen."
-        confirmLabel="Slug entsperren"
-        onConfirm={() => {
-          setSlugUnlocked(true);
-          setSlugWarningOpen(false);
-        }}
-        onCancel={() => setSlugWarningOpen(false)}
       />
     </>
   );

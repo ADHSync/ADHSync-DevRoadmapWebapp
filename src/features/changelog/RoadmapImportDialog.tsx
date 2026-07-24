@@ -34,9 +34,6 @@ interface RoadmapImportDialogProps {
   onClose: () => void;
 }
 
-const inputClassName =
-  "mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20";
-
 export function RoadmapImportDialog({
   open,
   items,
@@ -161,7 +158,7 @@ export function RoadmapImportDialog({
                   {...register("app_version")}
                   id="roadmap-import-version"
                   placeholder="2.1.0"
-                  className={inputClassName}
+                  className="form-control"
                 />
                 {errors.app_version && (
                   <p className="mt-1 text-xs text-red-700 dark:text-red-300">
@@ -180,7 +177,7 @@ export function RoadmapImportDialog({
                   {...register("released_on")}
                   id="roadmap-import-date"
                   type="date"
-                  className={inputClassName}
+                  className="form-control"
                 />
                 {errors.released_on && (
                   <p className="mt-1 text-xs text-red-700 dark:text-red-300">
@@ -231,7 +228,7 @@ export function RoadmapImportDialog({
                         {...register("roadmap_item_ids")}
                         type="checkbox"
                         value={item.id}
-                        className="mt-0.5 size-4 rounded border-slate-400 text-cyan-700 focus:ring-cyan-600 dark:bg-slate-950"
+                        className="checkbox-control"
                       />
                       <span className="min-w-0">
                         <span className="block text-sm font-medium">

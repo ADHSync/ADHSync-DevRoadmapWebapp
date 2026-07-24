@@ -18,7 +18,6 @@ import {
   changeKindLabels,
   errorMessage,
   formatDate,
-  todayAsDateInput,
   visibilityLabels,
 } from "../../lib/content";
 import { sha256 } from "../../lib/hash";
@@ -37,9 +36,6 @@ import {
   type RoadmapImportValues,
 } from "./RoadmapImportDialog";
 import { useChangelogEntries } from "./useChangelogEntries";
-
-const selectClassName =
-  "h-9 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-800 outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400";
 
 function visibilityClassName(visibility: ContentVisibility): string {
   const classes: Record<ContentVisibility, string> = {
@@ -169,7 +165,6 @@ export function ChangelogPage() {
       try {
         await updateRoadmapItem(roadmapToComplete.id, {
           status: "done",
-          completed_at: roadmapToComplete.completed_at ?? todayAsDateInput(),
         });
         toast.success("Verknüpfter Roadmap-Eintrag als erledigt markiert.");
       } catch (error) {
@@ -288,7 +283,7 @@ export function ChangelogPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Version, Titel oder Text durchsuchen …"
-              className="h-9 w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 dark:border-slate-700 dark:bg-slate-900 dark:focus:border-cyan-400"
+              className="filter-search-control"
             />
           </label>
           <label>
@@ -298,7 +293,7 @@ export function ChangelogPage() {
               onChange={(event) =>
                 setKindFilter(event.target.value as ChangeKind | "")
               }
-              className={selectClassName}
+              className="filter-control"
             >
               <option value="">Alle Änderungsarten</option>
               {CHANGE_KINDS.map((value) => (
@@ -317,7 +312,7 @@ export function ChangelogPage() {
                   event.target.value as ContentVisibility | "",
                 )
               }
-              className={selectClassName}
+              className="filter-control"
             >
               <option value="">Alle Sichtbarkeiten</option>
               {CONTENT_VISIBILITIES.map((value) => (

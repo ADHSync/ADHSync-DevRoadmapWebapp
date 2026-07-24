@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .form-control {
+    @apply mt-1.5 min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm leading-5 text-slate-950 shadow-sm outline-none transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:shadow-none dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:border-slate-600 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20 dark:disabled:bg-slate-900/60 dark:disabled:text-slate-500;
+  }
+
+  .form-control-warning {
+    @apply border-amber-300 dark:border-amber-800;
+  }
+
+  .filter-control {
+    @apply h-9 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-800 shadow-sm outline-none transition-colors hover:border-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20;
+  }
+
+  .filter-search-control {
+    @apply h-9 w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-950 shadow-sm outline-none transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:border-slate-600 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20;
+  }
+
+  .login-control {
+    @apply h-10 w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-950 shadow-sm outline-none transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:border-slate-600 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20 dark:disabled:bg-slate-900/60;
+  }
+
+  .checkbox-control {
+    @apply mt-0.5 size-4 shrink-0 rounded border-slate-400 bg-white text-cyan-700 focus:ring-2 focus:ring-cyan-600 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-950 dark:focus:ring-cyan-400 dark:focus:ring-offset-slate-900;
+  }
+}
+
 @layer base {
   :root {
     font-family:
@@ -40,7 +66,9 @@
   }
 
   button,
-  input {
+  input,
+  select,
+  textarea {
     font: inherit;
   }
 

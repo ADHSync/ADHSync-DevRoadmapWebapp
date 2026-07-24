@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { databaseErrorMessage } from "../../lib/database-error";
 import { supabase } from "../../lib/supabase";
 import type {
   ChangelogEntry,
@@ -54,7 +55,7 @@ export function useChangelogEntries() {
       .order("sort_order");
 
     if (error) {
-      setLoadError(error.message);
+      setLoadError(databaseErrorMessage(error));
       setIsLoading(false);
       return;
     }

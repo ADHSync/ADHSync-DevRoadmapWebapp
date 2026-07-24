@@ -96,7 +96,7 @@ export function LoginPage() {
                 autoFocus
                 disabled={isSubmitting}
                 aria-describedby="email-help"
-                className="h-10 w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-950 outline-none placeholder:text-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/25"
+                className="login-control"
                 placeholder="admin@beispiel.de"
               />
             </div>
