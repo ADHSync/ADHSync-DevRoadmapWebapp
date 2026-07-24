@@ -156,6 +156,18 @@ supabase/
   functions/          Supabase Edge Functions
 ```
 
+## Stabile Roadmap-IDs
+
+Beim Anlegen eines Roadmap-Eintrags erzeugt die Admin-App den `slug`
+automatisch aus dem deutschen Titel. Bereits belegte Werte erhalten ein
+fortlaufendes Suffix wie `-2` oder `-3`. Der Slug wird anschließend auch bei
+Titeländerungen nicht mehr verändert.
+
+Diese stabile ID wird im veröffentlichten JSON als `id` verwendet und verbindet
+Changelog-Einträge mit Roadmap-Einträgen. Dadurch kann die iOS-App denselben
+Inhalt über mehrere Veröffentlichungen hinweg wiedererkennen, ohne eine interne
+Datenbank-UUID auszugeben.
+
 ## Sicherheit
 
 Im Frontend dürfen ausschließlich `VITE_SUPABASE_URL` und

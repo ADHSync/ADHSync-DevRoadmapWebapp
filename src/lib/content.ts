@@ -102,6 +102,28 @@ export function slugify(value: string): string {
     .replace(/-{2,}/g, "-");
 }
 
+export function uniqueSlug(
+  value: string,
+  existingSlugs: Iterable<string>,
+): string {
+  const usedSlugs = new Set(existingSlugs);
+  const normalizedBase =
+    slugify(value).slice(0, 100).replace(/-+$/g, "") || "roadmap-eintrag";
+  let candidate = normalizedBase;
+  let suffixNumber = 2;
+
+  while (usedSlugs.has(candidate)) {
+    const suffix = `-${suffixNumber}`;
+    const shortenedBase = normalizedBase
+      .slice(0, 100 - suffix.length)
+      .replace(/-+$/g, "");
+    candidate = `${shortenedBase}${suffix}`;
+    suffixNumber += 1;
+  }
+
+  return candidate;
+}
+
 export function todayAsDateInput(): string {
   const now = new Date();
   const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
