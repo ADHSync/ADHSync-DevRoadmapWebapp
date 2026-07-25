@@ -10,10 +10,20 @@ const allowedTables = ["roadmap_items", "changelog_entries"] as const;
 
 type TranslatableTable = (typeof allowedTables)[number];
 
-interface TranslateRequest {
+interface TranslateStoredRequest {
   table: TranslatableTable;
   id: string;
 }
+
+interface TranslateDraftRequest {
+  table: TranslatableTable;
+  source: {
+    title: string;
+    text: string;
+  };
+}
+
+type TranslateRequest = TranslateStoredRequest | TranslateDraftRequest;
 
 interface AnthropicResponse {
   content?: Array<{
@@ -52,13 +62,33 @@ function isTranslateRequest(value: unknown): value is TranslateRequest {
   }
 
   const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.id === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      candidate.id,
-    ) &&
+  const tableIsValid =
     typeof candidate.table === "string" &&
-    allowedTables.includes(candidate.table as TranslatableTable)
+    allowedTables.includes(candidate.table as TranslatableTable);
+
+  if (!tableIsValid) {
+    return false;
+  }
+
+  if (typeof candidate.id === "string") {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      candidate.id,
+    );
+  }
+
+  if (!candidate.source || typeof candidate.source !== "object") {
+    return false;
+  }
+
+  const source = candidate.source as Record<string, unknown>;
+
+  return (
+    typeof source.title === "string" &&
+    source.title.trim().length > 0 &&
+    source.title.trim().length <= 80 &&
+    typeof source.text === "string" &&
+    source.text.trim().length > 0 &&
+    source.text.trim().length <= 300
   );
 }
 
@@ -171,7 +201,7 @@ Deno.serve(async (request) => {
     return jsonResponse(
       {
         error:
-          "Erwartet werden table ('roadmap_items' oder 'changelog_entries') und eine gültige UUID.",
+          "Erwartet werden table und entweder eine gültige UUID oder deutscher Quelltext.",
       },
       400,
     );
@@ -189,27 +219,35 @@ Deno.serve(async (request) => {
   const selectColumns = isRoadmap
     ? "id,title_de,summary_de"
     : "id,title_de,body_de";
-  const { data: record, error: readError } = await adminClient
-    .from(body.table)
-    .select(selectColumns)
-    .eq("id", body.id)
-    .single();
+  let titleDe: string;
+  let sourceText: string;
 
-  if (readError || !record) {
-    return jsonResponse(
-      { error: "Der zu übersetzende Eintrag wurde nicht gefunden." },
-      404,
-    );
-  }
+  if ("id" in body) {
+    const { data: record, error: readError } = await adminClient
+      .from(body.table)
+      .select(selectColumns)
+      .eq("id", body.id)
+      .single();
 
-  const titleDe = record.title_de;
-  const sourceText = record[sourceTextField];
+    if (readError || !record) {
+      return jsonResponse(
+        { error: "Der zu übersetzende Eintrag wurde nicht gefunden." },
+        404,
+      );
+    }
 
-  if (typeof titleDe !== "string" || typeof sourceText !== "string") {
-    return jsonResponse(
-      { error: "Der deutsche Quelltext des Eintrags ist ungültig." },
-      500,
-    );
+    titleDe = record.title_de;
+    sourceText = record[sourceTextField];
+
+    if (typeof titleDe !== "string" || typeof sourceText !== "string") {
+      return jsonResponse(
+        { error: "Der deutsche Quelltext des Eintrags ist ungültig." },
+        500,
+      );
+    }
+  } else {
+    titleDe = body.source.title.trim();
+    sourceText = body.source.text.trim();
   }
 
   const requestedShape = isRoadmap
@@ -301,6 +339,14 @@ Deno.serve(async (request) => {
   const updateColumns = isRoadmap
     ? "id,title_en,summary_en,translation_status,source_hash"
     : "id,title_en,body_en,translation_status,source_hash";
+
+  if (!("id" in body)) {
+    return jsonResponse({
+      table: body.table,
+      ...updatePayload,
+    });
+  }
+
   const { data: updatedRecord, error: updateError } = await adminClient
     .from(body.table)
     .update(updatePayload)
