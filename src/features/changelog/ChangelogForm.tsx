@@ -25,7 +25,7 @@ import {
 } from "../../lib/content";
 import { sha256 } from "../../lib/hash";
 import { isTranslationStale } from "../../lib/translation";
-import { translateEntry } from "../../lib/translate";
+import { translateDraft, translateEntry } from "../../lib/translate";
 import { useBeforeUnloadWarning } from "../../lib/useUnsavedChanges";
 import type {
   ChangelogEntry,
@@ -169,6 +169,7 @@ export function ChangelogForm({
   const translationMissing = !titleEn.trim() || !bodyEn.trim();
   const translationNeedsAttention =
     translationMissing || sourceChanged || translationStatus === "missing";
+  const draftTranslationSourceMissing = !titleDe.trim() || !bodyDe.trim();
 
   function requestClose() {
     if (isDirty) {
@@ -200,26 +201,37 @@ export function ChangelogForm({
   }
 
   async function translateToEnglish() {
-    if (!entry) {
+    if (!entry && draftTranslationSourceMissing) {
       return;
     }
 
     setIsTranslating(true);
 
     try {
-      const translation = await translateEntry("changelog_entries", entry.id);
-      setValue("title_en", translation.title_en, { shouldDirty: false });
-      setValue("body_en", translation.body_en, { shouldDirty: false });
-      setValue("translation_status", "auto", { shouldDirty: false });
+      const translation = entry
+        ? await translateEntry("changelog_entries", entry.id)
+        : await translateDraft("changelog_entries", {
+            title: titleDe.trim(),
+            text: bodyDe.trim(),
+          });
+      const shouldDirty = !entry;
+
+      setValue("title_en", translation.title_en, { shouldDirty });
+      setValue("body_en", translation.body_en, { shouldDirty });
+      setValue("translation_status", "auto", { shouldDirty });
       setSourceHashReference(translation.source_hash);
       setSourceChanged(false);
       setLanguageTab("en");
-      onTranslated({
-        title_en: translation.title_en,
-        body_en: translation.body_en,
-        translation_status: "auto",
-        source_hash: translation.source_hash,
-      });
+
+      if (entry) {
+        onTranslated({
+          title_en: translation.title_en,
+          body_en: translation.body_en,
+          translation_status: "auto",
+          source_hash: translation.source_hash,
+        });
+      }
+
       toast.success("Englische Übersetzung wurde erstellt.");
     } catch (error) {
       toast.error("Übersetzung konnte nicht erstellt werden.", {
@@ -413,13 +425,18 @@ export function ChangelogForm({
                 <button
                   type="button"
                   onClick={() => void translateToEnglish()}
-                  disabled={!entry || isDirty || isTranslating}
+                  disabled={
+                    isTranslating ||
+                    (entry ? isDirty : draftTranslationSourceMissing)
+                  }
                   title={
-                    !entry
-                      ? "Speichere den Eintrag zuerst."
-                      : isDirty
-                        ? "Speichere zuerst die aktuellen Änderungen."
-                        : "Gespeicherten deutschen Text übersetzen"
+                    entry && isDirty
+                      ? "Speichere zuerst die aktuellen Änderungen."
+                      : !entry && draftTranslationSourceMissing
+                        ? "Fülle zuerst den deutschen Titel und Text aus."
+                        : entry
+                          ? "Gespeicherten deutschen Text übersetzen"
+                          : "Aktuellen deutschen Entwurf übersetzen"
                   }
                   className="inline-flex items-center gap-2 rounded-md border border-cyan-300 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-900 hover:bg-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-cyan-800 dark:bg-cyan-950 dark:text-cyan-100 dark:hover:bg-cyan-900 dark:focus-visible:ring-offset-slate-950"
                 >

@@ -5,8 +5,8 @@ Changelog-Inhalte von ADHSync.
 
 ## Voraussetzungen
 
-- Node.js 26.4.0
-- npm 11.17.0
+- Node.js 26.5.0 (unterstützt werden Versionen ab 26.4.0 bis vor 27)
+- npm 11.17.0 oder neuer innerhalb der Hauptversion 11
 - Supabase CLI
 - Ein Supabase-Projekt mit dem in `AGENTS.md` beschriebenen Schema
 
@@ -187,9 +187,14 @@ Weitere Hinweise zu Fehlercodes, Rollback und Schemaänderungen stehen im
 Nach dem Setzen der Secrets werden beide Functions ausgerollt:
 
 ```bash
-supabase functions deploy translate
-supabase functions deploy publish
+supabase functions deploy translate --no-verify-jwt
+supabase functions deploy publish --no-verify-jwt
 ```
+
+Beide Functions prüfen den Bearer-Token selbst mit Supabase Auth. Die
+zusätzliche Legacy-JWT-Prüfung des Function-Gateways muss deshalb deaktiviert
+bleiben; andernfalls werden Sitzungen mit den aktuellen Signing Keys abgewiesen,
+bevor der Function-Code ausgeführt wird.
 
 Vor einem Function-Deployment müssen die zugehörigen Migrationen bereits
 angewendet sein:
@@ -197,6 +202,36 @@ angewendet sein:
 ```bash
 supabase db push
 ```
+
+Neue Roadmap- und Changelog-Einträge können bereits vor dem ersten Speichern
+übersetzt werden. In diesem Fall sendet das Frontend ausschließlich den
+deutschen Titel und den deutschen Nutzertext an `translate`. Die Function
+liefert die englischen Felder und den Quelltext-Hash zurück, schreibt aber noch
+nichts in die Datenbank. Erst der normale Speichervorgang legt den vollständigen
+Datensatz an.
+
+## Frontend auf Plesk bereitstellen
+
+Das Frontend wird von Vite als statische Website gebaut. Auf Plesk muss daher
+kein Node.js-Prozess dauerhaft laufen. Wenn Plesk Node.js 26.5 bereitstellt,
+kann der Build im Anwendungsverzeichnis so ausgeführt werden:
+
+```bash
+export PATH=/opt/plesk/node/26/bin:$PATH
+npm ci
+npm run build
+```
+
+Dabei müssen `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` als
+Build-Umgebungsvariablen gesetzt sein. Anschließend wird der Inhalt von `dist/`
+ausgeliefert, zum Beispiel indem `dist/` als Document Root konfiguriert wird.
+Die Supabase- und Publish-Secrets bleiben ausschließlich in den Edge Functions.
+
+Die Meldung `nodenv: command not found` entsteht in Plesks Shell-Initialisierung
+und nicht im Frontend. Der explizite `PATH` verwendet die von Plesk installierte
+Node.js-Version ohne eine projektspezifische `nodenv`-Konfiguration. Tritt die
+Meldung bereits beim Öffnen einer CageFS-Shell auf, muss der Serveradministrator
+die Plesk-/CageFS-Installation korrigieren.
 
 ## Ablauf einer Veröffentlichung
 
